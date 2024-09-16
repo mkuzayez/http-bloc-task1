@@ -1,16 +1,13 @@
-# http_bloc_task1
+# Separation of Concerns in Flutter:
 
-A new Flutter project.
+Multi-layered architecture is a good practice when working with Flutter, 
+especially when implementing clean code principles like separation of concerns.
 
-## Getting Started
+[Network Layer] Data Provider: is responsible for external data access, like making network calls to get data from an API.
+Use "request" to indicate pulling data from an external source.
 
-This project is a starting point for a Flutter application.
+[Repository Layer] DataRepo: is responsible for transforming and handling the data (i.e., converting the raw JSON to model objects).
+Use "retrieve" to indicate transforming or modeling the data for internal use.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+[Cubit/BLoC Layer] DataCubit/BLoC: manages the application's state and triggers UI updates.
+Use "load" to indicate managing the app state with this data.
