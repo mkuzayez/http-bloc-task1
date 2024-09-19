@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http_bloc_task1/business_logic/cubit/characters_cubit.dart';
 import 'package:http_bloc_task1/data/models/characters.dart';
 import 'package:http_bloc_task1/presentation/widgets/character_item.dart';
+import 'package:flutter_offline/flutter_offline.dart';
 
 class CharactersScreen extends StatefulWidget {
   const CharactersScreen({super.key});
@@ -42,7 +43,7 @@ class _CharactersScreenState extends State<CharactersScreen> {
   Widget buildGridView() {
     return SingleChildScrollView(
       child: Container(
-        color: Colors.indigo,
+        color: const Color.fromARGB(255, 255, 255, 255),
         child: Column(
           children: [
             GridView.builder(
@@ -52,12 +53,16 @@ class _CharactersScreenState extends State<CharactersScreen> {
                 mainAxisSpacing: 1,
                 crossAxisSpacing: 1,
               ),
-              itemCount: allCharacters.length,
+              itemCount: searchController.text.isEmpty
+                  ? allCharacters.length
+                  : searchedByLettersCharacters.length,
               shrinkWrap: true,
               physics: const ClampingScrollPhysics(),
               itemBuilder: (context, index) {
                 return CharacterItem(
-                  character: allCharacters[index],
+                  character: searchController.text.isEmpty
+                      ? allCharacters[index]
+                      : searchedByLettersCharacters[index],
                 );
               },
             )
@@ -85,20 +90,26 @@ class _CharactersScreenState extends State<CharactersScreen> {
           (character) => character.name.toLowerCase().startsWith(characters),
         )
         .toList();
+    setState(() {});
   }
 
   List<Widget> buildAppBarActions() {
     if (isSearching) {
       return [
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            clearSearch();
+            Navigator.pop(context);
+          },
           icon: const Icon(Icons.clear),
         ),
       ];
     } else {
       return [
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            startSearching();
+          },
           icon: const Icon(Icons.search),
         ),
       ];
@@ -106,18 +117,84 @@ class _CharactersScreenState extends State<CharactersScreen> {
   }
 
   void startSearching() {
-    ModalRoute.of(context)!.addLocalHistoryEntry(LocalHistoryEntry());
+    ModalRoute.of(context)!
+        .addLocalHistoryEntry(LocalHistoryEntry(onRemove: stopSearching));
+    setState(() {
+      isSearching = true;
+    });
+  }
+
+  void stopSearching() {
+    clearSearch();
+
+    setState(() {
+      isSearching = false;
+    });
+  }
+
+  void clearSearch() {
+    setState(() {
+      searchController.clear();
+    });
+  }
+
+  Widget buildAppBar() {
+    return const Text(
+      "Rick and Morty Characters",
+    );
+  }
+
+  Widget buildNoInternetWidget() {
+    return Center(
+      child: Container(
+        color: Colors.white,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              height: 20,
+            ),
+            const Text(
+              'Connection failed',
+              style: TextStyle(
+                fontSize: 22,
+                color: Colors.black,
+              ),
+            ),
+            Image.asset('assets/images/no_internet.png')
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Rick and Morty Characters",
-        ),
+        leading: isSearching
+            ? const BackButton(
+                color: Colors.black,
+              )
+            : const SizedBox(),
+        title: isSearching ? buildSearchField() : buildAppBar(),
+        actions: buildAppBarActions(),
       ),
-      body: buildWidget(),
+      body: OfflineBuilder(
+        connectivityBuilder: (
+          BuildContext context,
+          List<ConnectivityResult> connectivity,
+          Widget child,
+        ) {
+          final bool connected = connectivity.contains(ConnectivityResult.none);
+          if (!connected) {
+            return buildWidget();
+          } else {
+            return buildNoInternetWidget();
+          }
+        },
+        child: const CircularProgressIndicator(),
+      ),
     );
   }
 }
